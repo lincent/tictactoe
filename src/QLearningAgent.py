@@ -16,12 +16,14 @@ class QLearningAgent:
             self.Q[key] = 0.0
         return self.Q[key]
 
-    def choose_action(self, state: str, available_moves):
+    def choose_action(self, game: TicTacToe):
+        available_moves = game.get_valid_moves()
+        game_state = game.get_game_state()
         if self.epsilon > 0:
             if random.uniform(0, 1) < self.epsilon:
                 return random.choice(available_moves)
 
-        q_values = [self.get_q_value(state, action) for action in available_moves]
+        q_values = [self.get_q_value(game_state, action) for action in available_moves]
         max_Q = max(q_values)
         if q_values.count(max_Q) > 1:
             best_moves = [i for i in range(len(available_moves)) if q_values[i] == max_Q]

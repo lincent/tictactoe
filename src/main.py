@@ -15,18 +15,18 @@ def train(num_episodes, alpha, epsilon, discount_factor):
             print(f'game id: {i}')
 
         game = TicTacToe()
-        while not game.game_complete:
+        while not game.is_game_complete():
             action = agent.choose_action(game)
             game.make_move(*action)
 
             # give reward for winning or continuing game
             next_state = game.get_game_state()
-            reward = 1 if game.result == X_WINS or game.result == DRAW else 0
+            reward = 1 if game.game_status == X_WINS or game.game_status == DRAW else 0
 
             agent.update_q_value(game.get_game_state, action, reward, next_state, game)
 
             # Don't try to make O's move if the game is finished
-            if game.game_complete:
+            if game.is_game_complete():
                 break
 
             # O's move (random)
@@ -48,20 +48,13 @@ def play(num_games: int, x_player, o_player):
 
 def play_game(x_player, o_player):
     game = TicTacToe()
-    while not game.game_complete:
-        action = x_player(game)
-        game.make_move(*action)
-
-        if not game.game_complete:
-            action = o_player(game)
-            game.make_move(*action)
-    return game.result
+    return game.play_game(x_player, o_player)
 
 
 if __name__ == "__main__":
-    model = train(10000, 0.5, 0.1, 1)
-    print('trained model game')
-    play(1000, model.choose_action, choose_random_move)
+    # model = train(10000, 0.5, 0.1, 1)
+    # print('trained model game')
+    # play(1000, model.choose_action, choose_random_move)
 
     print('random game')
     play(1000, choose_random_move, choose_random_move)

@@ -13,6 +13,8 @@ def train(num_episodes, alpha, epsilon, discount_factor):
     for i in range(num_episodes):
         if i % 5000 == 0:
             print(f'game id: {i}')
+
+        game = TicTacToe()
         while not game.game_complete:
             action = agent.choose_action(game)
             game.make_move(*action)
@@ -32,49 +34,34 @@ def train(num_episodes, alpha, epsilon, discount_factor):
             game.make_move(*action)
 
         # print(game)
-        game = TicTacToe()
     return agent
 
-def play(num_games: int, model: QLearningAgent):
-    print('trained game')
+def play(num_games: int, x_player, o_player):
     scoreCard = ScoreBoard()
 
-    for i in range(num_games):
-        game = TicTacToe()
-        while not game.game_complete:
-            action = model.choose_action(game)
-            game.make_move(*action)
-
-            if not game.game_complete:
-                action = choose_random_move(game)
-                game.make_move(*action)
-        scoreCard.record_result(game.result)
+    for _ in range(num_games):
+        result = play_game(x_player, o_player)
+        scoreCard.record_result(result)
+        
     scoreCard.print_results()
 
-def random_play(num_games: int):
-    print('random game')
-    scoreCard = ScoreBoard()
 
-    for i in range(num_games):
-        game = TicTacToe()
-        while not game.game_complete:
-            action = choose_random_move(game)
+def play_game(x_player, o_player):
+    game = TicTacToe()
+    while not game.game_complete:
+        action = x_player(game)
+        game.make_move(*action)
+
+        if not game.game_complete:
+            action = o_player(game)
             game.make_move(*action)
-
-            if not game.game_complete:
-                action = choose_random_move(game)
-                game.make_move(*action)
-        scoreCard.record_result(game.result)
-    scoreCard.print_results()
+    return game.result
 
 
 if __name__ == "__main__":
     model = train(10000, 0.5, 0.1, 1)
-    play(1000, model)
-    random_play(1000)
-    # game = TicTacToe("1 0 0 1 -1 -1 0 0 0")
-    # action = model.choose_action("1. 0. 0. 1. -1. -1. 0. 0. 0.", game.get_valid_moves())
-    # game.make_move(*action)
-    # print(game)
-    # print(action)
+    print('trained model game')
+    play(1000, model.choose_action, choose_random_move)
 
+    print('random game')
+    play(1000, choose_random_move, choose_random_move)

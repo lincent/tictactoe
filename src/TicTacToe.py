@@ -2,7 +2,7 @@ import numpy as np
 
 ## square values
 CROSS = 1
-NOUGHT = -1
+NOUGHT = 2
 EMPTY_SQUARE = 0
 
 ## game status states
@@ -26,7 +26,18 @@ class TicTacToe:
         else:
             self.board = np.zeros([BOARD_SIZE, BOARD_SIZE])
 
+
+    def print_state(self, state):
+        state = state.replace(".", "").replace("1", "X").replace("2", "O").replace("0", ".")
+        row1 = state[0:5]
+        row2 = state[6:11]
+        row3 = state[12:17]
+        print(f'{row1}')
+        print(f'{row2}')
+        print(f'{row3}')
+
     def play_game(self, x_player, o_player):
+        self.move_history = []
         while self.in_progress():
             if self.current_player == CROSS:
                 action = x_player(self)
@@ -72,9 +83,9 @@ class TicTacToe:
         if self.board[row, col] != EMPTY_SQUARE:
             return
         
+        self.store_move((row, col))
         self.board[row, col] = self.current_player
 
-        self.store_move()
         self.update_game_status()
         self.change_player()
 
@@ -83,8 +94,9 @@ class TicTacToe:
     def change_player(self):
         self.current_player = NOUGHT if self.current_player == CROSS else CROSS
 
-    def store_move(self):
-        self.move_history.append(self.get_game_state())
+    def store_move(self, action):
+        if (self.current_player == CROSS):
+            self.move_history.insert(0, (self.get_game_state(), action))
 
     def update_game_status(self):
         # rows and columns

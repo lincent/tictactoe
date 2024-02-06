@@ -1,103 +1,130 @@
 import numpy as np
 
+## square values
 CROSS = 1
-NOUGHT = -1
+NOUGHT = 2
+EMPTY_SQUARE = 0
+
+## game status states
+IN_PROGRESS = 2
+X_WINS = 1
+O_WINS = -1
+DRAW = 0
 
 BOARD_SIZE = 3
 
 
 class TicTacToe:
 
+    current_player = CROSS
+    game_status = IN_PROGRESS
+    move_history = []
+
     def __init__(self, board=None):
         if board is not None:
-            self.board = self.dehash(board)
+            self.board = self.convert_game_state_to_board(board)
         else:
             self.board = np.zeros([BOARD_SIZE, BOARD_SIZE])
-        self.player = CROSS
-        self.over = False
-        self.winner = 0
+
+
+    def print_state(self, state):
+        state = state.replace(".", "").replace("1", "X").replace("2", "O").replace("0", ".")
+        row1 = state[0:5]
+        row2 = state[6:11]
+        row3 = state[12:17]
+        print(f'{row1}')
+        print(f'{row2}')
+        print(f'{row3}')
+
+    def play_game(self, x_player, o_player):
         self.move_history = []
+        while self.in_progress():
+            if self.current_player == CROSS:
+                action = x_player(self)
+            else:
+                action = o_player(self)
+            
+            self.make_move(*action)
 
-    def hash(self):
-        
-        return str(self.board.reshape(9))
+        return self.game_status
+
+    def get_game_state(self):
+        return str(self.board.reshape(9)).rstrip(']').lstrip('[')
     
-    def dehash(self, hash):
-        if type(hash) == str:
-            hash = hash.rstrip(']')
-            hash = hash.lstrip('[')
-            return np.array(list(map(int, hash.split(' ')))).reshape([3,3])
-        return hash
+    def convert_game_state_to_board(self, state):
+        if type(state) == str:
+            return np.array(list(map(int, state.split(' ')))).reshape([3,3])
+        return state
 
-    def __repr__(self):
+    def print_board(self):
         s = ""
         for row in self.board:
             for i in row:
                 s += 'X' if i == CROSS else 'O' if i == NOUGHT else '.'
             s += "\n"
 
-        return s
+        print(s)
 
-    def valid_moves(self):
-        if self.winner != 0:
+    def get_game_status(self):
+        return self.game_status
+    
+    def is_game_complete(self):
+        return self.game_status != IN_PROGRESS
+    
+    def in_progress(self):
+        return self.game_status == IN_PROGRESS
+
+    def get_valid_moves(self):
+        if self.game_status != IN_PROGRESS:
             return []
-        return [tuple(move) for move in np.argwhere(self.board == 0.).tolist()]
+        return [tuple(move) for move in np.argwhere(self.board == EMPTY_SQUARE).tolist()]
 
     def make_move(self, row, col):
-        if self.board[row, col] != 0.:
+        if self.board[row, col] != EMPTY_SQUARE:
             return
-        self.board[row, col] = self.player
+        
+        self.store_move((row, col))
+        self.board[row, col] = self.current_player
 
-        self.move_history.append(self.hash())
+        self.update_game_status()
+        self.change_player()
 
-        winner = self.check_winner()
-        if winner != 0:
-            self.over = True
-            self.winner = winner
-            return
+        return self.game_status
 
-        if len(self.valid_moves()) == 0:
-            self.over = True
-            return
+    def change_player(self):
+        self.current_player = NOUGHT if self.current_player == CROSS else CROSS
 
-        self.player = NOUGHT if self.player == CROSS else CROSS
+    def store_move(self, action):
+        if (self.current_player == CROSS):
+            self.move_history.insert(0, (self.get_game_state(), action))
 
-
-    def check_winner(self):
+    def update_game_status(self):
         # rows and columns
         for i in range(BOARD_SIZE):
             row = self.board[i]
             col = self.board[:, i]
 
             if np.all(row == CROSS) or np.all(col == CROSS):
-                return CROSS
+                self.game_status = X_WINS
+                return
 
             if np.all(row == NOUGHT) or np.all(col == NOUGHT):
-                return NOUGHT
+                self.game_status = O_WINS
+                return
 
         # diagonals
         diagonal_1 = self.board.diagonal()
         diagonal_2 = np.fliplr(self.board).diagonal()
         if np.all(diagonal_1 == CROSS) or np.all(diagonal_2 == CROSS):
-            return CROSS
+            self.game_status = X_WINS
+            return
         if np.all(diagonal_1 == NOUGHT) or np.all(diagonal_2 == NOUGHT):
-            return NOUGHT
-
-        return 0
-
-
-if __name__ == '__main__':
-    game = TicTacToe()
-
-    while not game.over:
-        print(game)
-        move = input("Player turn. Enter row and column: ")
-        x, y = map(int, move.split())
-        game.make_move(x, y)
-
-    print(game)
-    if game.winner != 0:
-        winner = 'X' if game.winner == CROSS else 'O'
-        print(f"{winner} is the winner")
-    else:
-        print('Game is a draw')
+            self.game_status = O_WINS
+            return
+        
+        if len(self.get_valid_moves()) == 0:
+            self.game_status = DRAW
+            return
+        
+        self.game_status = IN_PROGRESS
+        return
